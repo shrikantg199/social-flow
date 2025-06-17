@@ -129,13 +129,13 @@ export function CreatePostModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[80vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Create Post</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex gap-4">
-            <Avatar className="w-10 h-10">
+          <div className="flex gap-2 sm:gap-4">
+            <Avatar className="w-8 h-8 sm:w-10 sm:h-10">
               <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
               <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
             </Avatar>
@@ -144,7 +144,7 @@ export function CreatePostModal({
                 placeholder="What's on your mind?"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="min-h-[120px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="min-h-[100px] sm:min-h-[120px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm sm:text-base"
               />
             </div>
           </div>
@@ -155,7 +155,7 @@ export function CreatePostModal({
               <img
                 src={selectedImage}
                 alt="Selected"
-                className="max-h-[300px] w-full object-contain rounded-lg"
+                className="max-h-[200px] sm:max-h-[300px] w-full object-contain rounded-lg"
               />
               <button
                 type="button"
@@ -167,8 +167,8 @@ export function CreatePostModal({
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-4 border-t">
-            <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t">
+            <div className="flex gap-2 w-full sm:w-auto justify-center sm:justify-start">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -194,19 +194,20 @@ export function CreatePostModal({
                 <Smile className="w-5 h-5" />
               </Button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto justify-center sm:justify-end">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={onClose}
                 disabled={isSubmitting}
+                className="flex-1 sm:flex-none"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={(!content.trim() && !selectedImage) || isSubmitting}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                className="flex-1 sm:flex-none bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
               >
                 {isSubmitting ? "Posting..." : "Post"}
               </Button>

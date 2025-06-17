@@ -22,18 +22,7 @@ export default function FeedPage() {
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <h1 className="text-3xl font-bold mb-2">Home</h1>
-        <p className="text-slate-600 dark:text-slate-400">
-          Welcome back, {currentUser.name}!
-        </p>
-      </motion.div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
         <div className="lg:col-span-2">
           <Feed currentUser={currentUser} />
         </div>

@@ -60,16 +60,22 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await connectDB();
+
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = 20;
+    const skip = (page - 1) * limit;
 
     const posts = await Post.find()
       .populate('author', 'name profilePicture')
       .populate('likes', 'name')
       .populate('comments.user', 'name profilePicture')
-      .sort({ createdAt: -1 })
-      .limit(20);
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(skip)
+      .limit(limit);
 
     return NextResponse.json(Array.isArray(posts) ? posts : []);
   } catch (error) {

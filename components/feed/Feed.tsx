@@ -22,17 +22,35 @@ export function Feed({ currentUser }: FeedProps) {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const fetchPosts = async () => {
-    setLoading(true);
+  const fetchPosts = async (pageNum: number = 1, refresh: boolean = false) => {
+    if (refresh) {
+      setLoading(true);
+      setPage(1);
+    }
     try {
-      const res = await fetch("/api/posts");
+      const res = await fetch(`/api/posts?page=${pageNum}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch posts");
+      }
       const data = await res.json();
-      setPosts(data);
+      if (refresh) {
+        setPosts(data);
+      } else {
+        setPosts((prev) => [...prev, ...data]);
+      }
+      setHasMore(data.length === 20); // If we get less than 20 posts, we've reached the end
+      setError(null);
     } catch (err) {
       console.error("Error fetching posts:", err);
-      setPosts([]);
+      setError("Failed to load posts. Please try again.");
+      if (refresh) {
+        setPosts([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -40,14 +58,15 @@ export function Feed({ currentUser }: FeedProps) {
 
   const refreshPosts = async () => {
     setRefreshing(true);
-    try {
-      const res = await fetch("/api/posts");
-      const data = await res.json();
-      setPosts(data);
-    } catch (err) {
-      console.error("Error refreshing posts:", err);
-    } finally {
-      setRefreshing(false);
+    await fetchPosts(1, true);
+    setRefreshing(false);
+  };
+
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchPosts(nextPage);
     }
   };
 
@@ -139,7 +158,7 @@ export function Feed({ currentUser }: FeedProps) {
       </motion.div>
 
       {/* Refresh Button */}
-      <div className="flex justify-center">
+      <div className="flex justify-center items-center gap-4">
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -153,11 +172,25 @@ export function Feed({ currentUser }: FeedProps) {
             "Refresh Feed"
           )}
         </motion.button>
+        <span className="text-sm text-slate-500 dark:text-slate-400">
+          Showing latest posts
+        </span>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-4 text-red-500"
+        >
+          {error}
+        </motion.div>
+      )}
 
       {/* Posts */}
       <AnimatePresence mode="wait">
-        {loading ? (
+        {loading && page === 1 ? (
           <motion.div
             key="loading"
             initial={{ opacity: 0 }}
@@ -201,6 +234,25 @@ export function Feed({ currentUser }: FeedProps) {
                 />
               </motion.div>
             ))}
+
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="flex justify-center pt-4">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={loadMore}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors duration-200"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Load More"
+                  )}
+                </motion.button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
