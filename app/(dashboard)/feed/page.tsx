@@ -1,24 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useUser } from "@clerk/nextjs";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { Feed } from "@/components/feed/Feed";
 
 export default function FeedPage() {
-  const { user } = useUser();
-
-  if (!user) return null;
-
-  const currentUser = {
-    id: user.id || "0",
-    name: user.fullName || user.firstName || "User",
-    username:
-      user.username ||
-      user.emailAddresses[0]?.emailAddress.split("@")[0] ||
-      "user",
-    avatar: user.imageUrl || "",
-    verified: false,
-  };
+  const { currentUser, loading } = useCurrentUser();
+  if (loading || !currentUser) return null;
 
   return (
     <>

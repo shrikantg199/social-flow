@@ -9,8 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useEffect, useState } from "react";
 
-export function RightSidebar() {
+// Define a User type for suggested users
+interface User {
+  _id: string;
+  name: string;
+  username: string;
+  profilePicture: string;
+}
+
+export function RightSidebar({ currentUserId }: { currentUserId: string }) {
   const trendingTopics = [
     {
       tag: "#ReactJS",
@@ -44,38 +53,17 @@ export function RightSidebar() {
     },
   ];
 
-  const suggestedUsers = [
-    {
-      id: 1,
-      name: "Sarah Chen",
-      username: "sarahcodes",
-      avatar:
-        "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2",
-      followers: "12.3K",
-      isFollowing: false,
-      path: "/profile/sarahcodes",
-    },
-    {
-      id: 2,
-      name: "Mike Rodriguez",
-      username: "mikedesigns",
-      avatar:
-        "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2",
-      followers: "8.7K",
-      isFollowing: false,
-      path: "/profile/mikedesigns",
-    },
-    {
-      id: 3,
-      name: "Emma Watson",
-      username: "emmawrites",
-      avatar:
-        "https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2",
-      followers: "24.1K",
-      isFollowing: true,
-      path: "/profile/emmawrites",
-    },
-  ];
+  const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      fetch(`/api/users?search=${encodeURIComponent(search)}`)
+        .then((res) => res.json())
+        .then((data) => setSuggestedUsers(data));
+    }, 300); // debounce
+    return () => clearTimeout(timeout);
+  }, [search]);
 
   const upcomingEvents = [
     {
@@ -150,41 +138,41 @@ export function RightSidebar() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="border rounded px-2 py-1 w-full mb-2"
+              />
               {suggestedUsers.map((user, index) => (
                 <motion.div
-                  key={user.id}
+                  key={user._id}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 * index }}
                   className="flex items-center gap-3"
                 >
-                  <Link href={user.path}>
+                  <Link href={`/profile/${user._id}`}>
                     <Avatar className="w-10 h-10 ring-2 ring-slate-200 dark:ring-slate-700 hover:ring-purple-500 dark:hover:ring-purple-500 transition-all duration-200">
-                      <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={user.profilePicture} alt={user.name} />
+                      <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
                   </Link>
                   <div className="flex-1 min-w-0">
-                    <Link href={user.path}>
+                    <Link href={`/profile/${user._id}`}>
                       <p className="font-semibold text-sm truncate hover:text-purple-500 transition-colors duration-200">
                         {user.name}
                       </p>
-                      <p className="text-xs text-slate-500">
-                        @{user.username} • {user.followers} followers
-                      </p>
+                      <p className="text-xs text-slate-500">@{user.username}</p>
                     </Link>
                   </div>
                   <Button
                     size="sm"
-                    variant={user.isFollowing ? "outline" : "default"}
-                    className={cn(
-                      "transition-all duration-200",
-                      user.isFollowing
-                        ? "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                        : "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white hover:scale-105"
-                    )}
+                    variant="default"
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white hover:scale-105 transition-all duration-200"
                   >
-                    {user.isFollowing ? "Following" : "Follow"}
+                    Follow
                   </Button>
                 </motion.div>
               ))}

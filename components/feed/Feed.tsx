@@ -7,14 +7,15 @@ import { Post } from "./Post";
 import { Stories } from "./Stories";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@clerk/nextjs";
 
 interface FeedProps {
   currentUser: {
-    id: string;
+    _id: string;
     name: string;
     username: string;
-    avatar: string;
-    verified: boolean;
+    profilePicture: string;
   };
 }
 
@@ -26,6 +27,8 @@ export function Feed({ currentUser }: FeedProps) {
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { toast } = useToast();
+  const { userId } = useAuth();
 
   const fetchPosts = async (pageNum: number = 1, refresh: boolean = false) => {
     if (refresh) {
@@ -51,6 +54,11 @@ export function Feed({ currentUser }: FeedProps) {
       if (refresh) {
         setPosts([]);
       }
+      toast({
+        title: "Error",
+        description: "Failed to load posts. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -92,6 +100,11 @@ export function Feed({ currentUser }: FeedProps) {
       setPosts((prevPosts) => [newPost, ...prevPosts]);
     } catch (error) {
       console.error("Error creating post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create post. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -113,28 +126,67 @@ export function Feed({ currentUser }: FeedProps) {
     createdAt: post.createdAt,
   }));
 
-  const handleLike = (postId: string) => {
-    setPosts(
-      posts.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              isLiked: !post.isLiked,
-              likes: post.isLiked ? post.likes - 1 : post.likes + 1,
-            }
-          : post
-      )
-    );
+  // Map currentUser to the shape expected by CreatePost
+  const mappedUser = {
+    id: currentUser._id,
+    name: currentUser.name,
+    username: currentUser.username,
+    avatar: currentUser.profilePicture,
+    verified: false, // Set to false or use currentUser.verified if available
   };
 
-  const handleBookmark = (postId: string) => {
-    setPosts(
-      posts.map((post) =>
-        post.id === postId
-          ? { ...post, isBookmarked: !post.isBookmarked }
-          : post
-      )
-    );
+  const handleLike = async (postId: string) => {
+    try {
+      const response = await fetch(`/api/posts/${postId}/like`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to like post");
+      }
+
+      const updatedPost = await response.json();
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => (post._id === postId ? updatedPost : post))
+      );
+    } catch (error) {
+      console.error("Error liking post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to like post. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBookmark = async (postId: string) => {
+    try {
+      const response = await fetch(`/api/posts/${postId}/bookmark`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to bookmark post");
+      }
+
+      const updatedPost = await response.json();
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => (post._id === postId ? updatedPost : post))
+      );
+    } catch (error) {
+      console.error("Error bookmarking post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to bookmark post. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -154,7 +206,7 @@ export function Feed({ currentUser }: FeedProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
       >
-        <CreatePost currentUser={currentUser} onCreatePost={handleCreatePost} />
+        <CreatePost currentUser={mappedUser} onCreatePost={handleCreatePost} />
       </motion.div>
 
       {/* Refresh Button */}
@@ -219,16 +271,17 @@ export function Feed({ currentUser }: FeedProps) {
             exit={{ opacity: 0 }}
             className="space-y-4"
           >
-            {mappedPosts.map((post, index) => (
+            {mappedPosts.map((post, idx) => (
               <motion.div
-                key={post._id}
+                key={`${post._id || "noid"}-${idx}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: idx * 0.1 }}
                 layout
               >
                 <Post
                   post={post}
+                  currentUserId={currentUser._id}
                   onLike={handleLike}
                   onBookmark={handleBookmark}
                 />
