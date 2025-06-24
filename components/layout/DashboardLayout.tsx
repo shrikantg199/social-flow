@@ -55,13 +55,18 @@ export function DashboardLayout({
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    clerkId: user.id,
                     name: user.fullName || user.firstName || "User",
                     username:
                       user.username ||
-                      user.emailAddresses[0]?.emailAddress.split("@")[0] ||
-                      "user",
-                    email: user.emailAddresses[0]?.emailAddress || "",
+                      (user.emailAddresses &&
+                      user.emailAddresses[0]?.emailAddress
+                        ? user.emailAddresses[0].emailAddress.split("@")[0]
+                        : "user"),
+                    email:
+                      user.emailAddresses &&
+                      user.emailAddresses[0]?.emailAddress
+                        ? user.emailAddresses[0].emailAddress
+                        : "",
                     profilePicture: user.imageUrl || "",
                   }),
                 });
@@ -76,13 +81,16 @@ export function DashboardLayout({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  clerkId: user.id,
                   name: user.fullName || user.firstName || "User",
                   username:
                     user.username ||
-                    user.emailAddresses[0]?.emailAddress.split("@")[0] ||
-                    "user",
-                  email: user.emailAddresses[0]?.emailAddress || "",
+                    (user.emailAddresses && user.emailAddresses[0]?.emailAddress
+                      ? user.emailAddresses[0].emailAddress.split("@")[0]
+                      : "user"),
+                  email:
+                    user.emailAddresses && user.emailAddresses[0]?.emailAddress
+                      ? user.emailAddresses[0].emailAddress
+                      : "",
                   profilePicture: user.imageUrl || "",
                 }),
               });
@@ -98,8 +106,9 @@ export function DashboardLayout({
           name: user.fullName || user.firstName || "User",
           username:
             user.username ||
-            user.emailAddresses[0]?.emailAddress.split("@")[0] ||
-            "user",
+            (user.emailAddresses && user.emailAddresses[0]?.emailAddress
+              ? user.emailAddresses[0].emailAddress.split("@")[0]
+              : "user"),
           profilePicture: user.imageUrl || "",
           verified: false,
         });

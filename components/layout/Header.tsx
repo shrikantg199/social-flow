@@ -164,11 +164,13 @@ export function Header({
                   </div>
                 ) : (
                   searchResults.map((user) => (
-                    <Link
+                    <div
                       key={user._id}
-                      href={`/profile/${user._id}`}
-                      className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200"
-                      onClick={() => setIsSearchFocused(false)}
+                      className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 cursor-pointer"
+                      onClick={() => {
+                        setIsSearchFocused(false);
+                        router.push(`/profile/${user._id}`);
+                      }}
                     >
                       <Avatar className="w-8 h-8">
                         <AvatarImage
@@ -183,7 +185,7 @@ export function Header({
                           @{user.username}
                         </div>
                       </div>
-                    </Link>
+                    </div>
                   ))
                 )}
               </div>

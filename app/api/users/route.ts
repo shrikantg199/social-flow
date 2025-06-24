@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    const { email, username, firstName, lastName, avatar } = await req.json();
+    const { email, username, name, firstName, lastName, avatar } = await req.json();
 
     // Check if user already exists
     const existingUser = await User.findOne({ clerkId: userId });
@@ -22,14 +22,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ user: existingUser }, { status: 200 });
     }
 
+    // Compose name if not provided
+    let finalName = name;
+    if (!finalName && firstName && lastName) {
+      finalName = `${firstName} ${lastName}`;
+    } else if (!finalName && firstName) {
+      finalName = firstName;
+    } else if (!finalName && lastName) {
+      finalName = lastName;
+    }
+
+    // Generate username if not provided
+    let finalUsername = username;
+    if (!finalUsername && email) {
+      finalUsername = email.split('@')[0];
+    }
+
+    if (!finalName || !finalUsername) {
+      return NextResponse.json({ error: 'Name and username are required.' }, { status: 400 });
+    }
+
     // Create new user
     const newUser = new User({
       clerkId: userId,
       email,
-      username,
-      firstName,
-      lastName,
-      avatar,
+      username: finalUsername,
+      name: finalName,
+      profilePicture: avatar || '',
     });
 
     await newUser.save();

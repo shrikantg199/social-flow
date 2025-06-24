@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 import { io, Socket } from "socket.io-client";
 import { format } from "date-fns";
+import { useSearchParams } from "next/navigation";
 
 interface Conversation {
   _id: string;
@@ -40,41 +41,67 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState("");
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
+  const directUserId = searchParams ? searchParams.get("userId") : null;
+
+  const fetchConversations = async (): Promise<Conversation[]> => {
+    const res = await fetch("/api/conversations");
+    if (res.ok) {
+      const data = await res.json();
+      setConversations(data);
+      return data;
+    }
+    return [];
+  };
 
   useEffect(() => {
     if (currentUser) {
-      fetchConversations();
-      const socket = io({ path: "/api/socket" });
-      socketRef.current = socket;
-
-      socket.on("connect", () => {
+      fetchConversations().then((convos) => {
+        if (directUserId && directUserId !== currentUser._id) {
+          let convo = convos.find((c: Conversation) =>
+            c.participants.some((p) => p._id === directUserId)
+          );
+          if (convo) {
+            setSelectedConversation(convo);
+            fetchMessages(convo._id);
+            socketRef.current?.emit("joinConversation", convo._id);
+          } else {
+            fetch("/api/conversations", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ recipientId: directUserId }),
+            })
+              .then((res) => res.json())
+              .then((newConvo: Conversation) => {
+                setConversations((prev) => [newConvo, ...prev]);
+                setSelectedConversation(newConvo);
+                fetchMessages(newConvo._id);
+                socketRef.current?.emit("joinConversation", newConvo._id);
+              });
+          }
+        }
+      });
+      const socketInstance = io({ path: "/api/socket" });
+      socketRef.current = socketInstance;
+      socketInstance.on("connect", () => {
         console.log("Socket connected");
       });
-
-      socket.on("newMessage", (message: Message) => {
+      socketInstance.on("newMessage", (message: Message) => {
         if (message.conversationId === selectedConversation?._id) {
           setMessages((prev) => [...prev, message]);
         }
         fetchConversations();
       });
-
       return () => {
-        socket.disconnect();
+        socketInstance.disconnect();
       };
     }
-  }, [currentUser, selectedConversation?._id]);
+    // eslint-disable-next-line
+  }, [currentUser, selectedConversation?._id, directUserId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  const fetchConversations = async () => {
-    const res = await fetch("/api/conversations");
-    if (res.ok) {
-      const data = await res.json();
-      setConversations(data);
-    }
-  };
 
   const fetchMessages = async (conversationId: string) => {
     const res = await fetch(`/api/conversations/${conversationId}/messages`);
@@ -123,6 +150,7 @@ export default function MessagesPage() {
         </div>
         <div className="overflow-y-auto">
           {conversations.map((convo) => {
+            if (!Array.isArray(convo.participants)) return null;
             const otherParticipant = convo.participants.find(
               (p) => p._id !== currentUser?._id
             );
@@ -160,15 +188,19 @@ export default function MessagesPage() {
               <Avatar>
                 <AvatarImage
                   src={
-                    selectedConversation.participants.find(
-                      (p) => p._id !== currentUser?._id
-                    )?.profilePicture
+                    Array.isArray(selectedConversation.participants)
+                      ? selectedConversation.participants.find(
+                          (p) => p._id !== currentUser?._id
+                        )?.profilePicture
+                      : undefined
                   }
                 />
                 <AvatarFallback>
-                  {selectedConversation.participants
-                    .find((p) => p._id !== currentUser?._id)
-                    ?.name?.charAt(0)}
+                  {Array.isArray(selectedConversation.participants)
+                    ? selectedConversation.participants
+                        .find((p) => p._id !== currentUser?._id)
+                        ?.name?.charAt(0)
+                    : ""}
                 </AvatarFallback>
               </Avatar>
               <h2 className="text-xl font-bold">

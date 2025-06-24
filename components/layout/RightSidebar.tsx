@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 // Define a User type for suggested users
 interface User {
@@ -55,6 +56,17 @@ export function RightSidebar({ currentUserId }: { currentUserId: string }) {
 
   const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
+  const {
+    currentUser,
+    loading: currentUserLoading,
+    refetch,
+  } = useCurrentUser();
+  const [followingMap, setFollowingMap] = useState<{
+    [userId: string]: boolean;
+  }>({});
+  const [loadingMap, setLoadingMap] = useState<{ [userId: string]: boolean }>(
+    {}
+  );
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -64,6 +76,33 @@ export function RightSidebar({ currentUserId }: { currentUserId: string }) {
     }, 300); // debounce
     return () => clearTimeout(timeout);
   }, [search]);
+
+  useEffect(() => {
+    if (currentUser && Array.isArray(currentUser.following)) {
+      const map: { [userId: string]: boolean } = {};
+      currentUser.following.forEach((id: string) => {
+        map[id] = true;
+      });
+      setFollowingMap(map);
+    }
+  }, [currentUser]);
+
+  const handleFollowToggle = async (userId: string) => {
+    setLoadingMap((prev) => ({ ...prev, [userId]: true }));
+    try {
+      const res = await fetch(`/api/users/${userId}/follow`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to follow/unfollow");
+      const data = await res.json();
+      setFollowingMap((prev) => ({ ...prev, [userId]: data.isFollowing }));
+      refetch(); // update currentUser's following list
+    } catch (err) {
+      alert("Error updating follow status");
+    } finally {
+      setLoadingMap((prev) => ({ ...prev, [userId]: false }));
+    }
+  };
 
   const upcomingEvents = [
     {
@@ -167,13 +206,25 @@ export function RightSidebar({ currentUserId }: { currentUserId: string }) {
                       <p className="text-xs text-slate-500">@{user.username}</p>
                     </Link>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white hover:scale-105 transition-all duration-200"
-                  >
-                    Follow
-                  </Button>
+                  {currentUser && user._id !== currentUser._id && (
+                    <Button
+                      size="sm"
+                      variant={followingMap[user._id] ? "outline" : "default"}
+                      className={
+                        followingMap[user._id]
+                          ? "bg-gray-200 border border-gray-300 text-gray-700 hover:bg-gray-300"
+                          : "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white hover:scale-105"
+                      }
+                      disabled={loadingMap[user._id]}
+                      onClick={() => handleFollowToggle(user._id)}
+                    >
+                      {loadingMap[user._id]
+                        ? "..."
+                        : followingMap[user._id]
+                          ? "Following"
+                          : "Follow"}
+                    </Button>
+                  )}
                 </motion.div>
               ))}
             </CardContent>

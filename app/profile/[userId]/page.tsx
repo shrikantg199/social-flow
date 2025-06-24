@@ -7,6 +7,10 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfilePostGrid from "@/components/profile/ProfilePostGrid";
 import { Header } from "@/components/layout/Header";
 import { Dialog } from "@headlessui/react";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Post as FeedPost } from "@/components/feed/Post";
 
 interface User {
   _id: string;
@@ -16,6 +20,7 @@ interface User {
   bio: string;
   followers: string[];
   following: string[];
+  verified?: boolean;
 }
 
 interface Post {
@@ -31,6 +36,7 @@ interface Post {
     createdAt: string;
   }[];
   createdAt: string;
+  shares?: string[];
 }
 
 export default function ProfilePage({
@@ -56,10 +62,22 @@ export default function ProfilePage({
   const [editBio, setEditBio] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { currentUser, loading: currentUserLoading } = useCurrentUser();
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
 
   useEffect(() => {
     fetchUserProfile();
   }, [params.userId]);
+
+  useEffect(() => {
+    if (user) {
+      setFollowersCount(user.followers.length);
+      if (currentUser && user._id !== currentUser._id) {
+        setIsFollowing(user.followers.includes(currentUser._id));
+      }
+    }
+  }, [user, currentUser]);
 
   const fetchUserProfile = async () => {
     try {
@@ -74,7 +92,16 @@ export default function ProfilePage({
         ...data.user,
         username: data.user.username || data.user.name,
       });
-      setPosts(data.posts);
+      setPosts(
+        (data.posts || []).map((post: any) => ({
+          ...post,
+          shares: post.shares ?? [],
+          author: {
+            ...post.author,
+            verified: post.author?.verified ?? false,
+          },
+        }))
+      );
     } catch (err) {
       setError("Error loading profile");
       console.error(err);
@@ -225,6 +252,21 @@ export default function ProfilePage({
     }
   };
 
+  const handleFollowToggle = async () => {
+    if (!currentUser) return;
+    try {
+      const res = await fetch(`/api/users/${user?._id}/follow`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to follow/unfollow");
+      const data = await res.json();
+      setIsFollowing(data.isFollowing);
+      setFollowersCount(data.followersCount);
+    } catch (err) {
+      alert("Error updating follow status");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen bg-white">
@@ -267,8 +309,18 @@ export default function ProfilePage({
         <section className="flex flex-col sm:flex-row items-center sm:items-start gap-8 py-8 border-b border-gray-200">
           {/* Profile image with update overlay */}
           <div
-            className="relative flex-shrink-0 flex justify-center items-center w-32 h-32 rounded-full overflow-hidden border border-gray-300 bg-gray-100 group cursor-pointer"
-            onClick={() => fileInputRef.current?.click()}
+            className="relative flex-shrink-0 flex justify-center items-center w-32 h-32 rounded-full overflow-hidden border border-gray-300 bg-gray-100 group"
+            onClick={
+              currentUser && user._id === currentUser._id
+                ? () => fileInputRef.current?.click()
+                : undefined
+            }
+            style={{
+              cursor:
+                currentUser && user._id === currentUser._id
+                  ? "pointer"
+                  : "default",
+            }}
           >
             <Image
               src={
@@ -280,45 +332,69 @@ export default function ProfilePage({
               className="object-cover w-full h-full"
               priority
             />
-            {/* Camera overlay on hover */}
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 16.5V7.5A2.25 2.25 0 015.25 5.25h2.086a2.25 2.25 0 001.591-.659l.828-.828A2.25 2.25 0 0111.25 3h1.5a2.25 2.25 0 011.591.659l.828.828a2.25 2.25 0 001.591.659h2.086A2.25 2.25 0 0121 7.5v9a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 16.5z"
-                />
-                <circle cx="12" cy="12" r="3.5" />
-              </svg>
-            </div>
-            {/* Hidden file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleProfileImageChange}
-            />
+            {/* Camera overlay on hover - only for own profile */}
+            {currentUser && user._id === currentUser._id && (
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 16.5V7.5A2.25 2.25 0 015.25 5.25h2.086a2.25 2.25 0 001.591-.659l.828-.828A2.25 2.25 0 0111.25 3h1.5a2.25 2.25 0 011.591.659l.828.828a2.25 2.25 0 001.591.659h2.086A2.25 2.25 0 0121 7.5v9a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 16.5z"
+                  />
+                  <circle cx="12" cy="12" r="3.5" />
+                </svg>
+              </div>
+            )}
+            {/* Hidden file input - only for own profile */}
+            {currentUser && user._id === currentUser._id && (
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleProfileImageChange}
+              />
+            )}
           </div>
           <div className="flex-1 flex flex-col items-center sm:items-start gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
               <span className="text-2xl font-semibold text-gray-800">
                 {user.name}
               </span>
-              {/* Placeholder for Edit Profile/Follow button */}
-              <button
-                className="ml-0 sm:ml-6 px-4 py-1 border border-gray-300 rounded-md text-sm font-medium bg-white hover:bg-gray-50 transition"
-                onClick={openEditModal}
-              >
-                Edit Profile
-              </button>
+              {/* Edit Profile or Follow/Following and Message button */}
+              {currentUser && user._id === currentUser._id ? (
+                <button
+                  className="ml-0 sm:ml-6 px-4 py-1 border border-gray-300 rounded-md text-sm font-medium bg-white hover:bg-gray-50 transition"
+                  onClick={openEditModal}
+                >
+                  Edit Profile
+                </button>
+              ) : currentUser && user._id !== currentUser._id ? (
+                <div className="flex gap-2 ml-0 sm:ml-6">
+                  <Button
+                    className={`px-4 py-1 text-sm font-medium transition ${isFollowing ? "bg-gray-200 border border-gray-300 text-gray-700 hover:bg-gray-300" : "bg-blue-500 text-white hover:bg-blue-600"}`}
+                    onClick={handleFollowToggle}
+                    variant={isFollowing ? "outline" : "default"}
+                  >
+                    {isFollowing ? "Following" : "Follow"}
+                  </Button>
+                  <Link href={`/messages?userId=${user._id}`}>
+                    <Button
+                      className="px-4 py-1 text-sm font-medium bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700"
+                      variant="outline"
+                    >
+                      Message
+                    </Button>
+                  </Link>
+                </div>
+              ) : null}
             </div>
             <div className="flex gap-8 mt-2">
               <div className="flex flex-col items-center">
@@ -328,9 +404,7 @@ export default function ProfilePage({
                 </span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="font-semibold text-lg">
-                  {user.followers.length}
-                </span>
+                <span className="font-semibold text-lg">{followersCount}</span>
                 <span className="text-xs text-gray-500 uppercase tracking-wide">
                   Followers
                 </span>
@@ -378,45 +452,22 @@ export default function ProfilePage({
               <span className="text-gray-400 text-lg">No posts yet.</span>
             </div>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-3 gap-1 md:gap-4">
+            <div className="space-y-4">
               {posts.map((post) => (
-                <div
+                <FeedPost
                   key={post._id}
-                  className="relative aspect-square bg-gray-100 overflow-hidden group cursor-pointer"
-                  onClick={() => openModal(post)}
-                >
-                  {post.images && post.images.length > 0 ? (
-                    <Image
-                      src={post.images[0]}
-                      alt="Post image"
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center w-full h-full text-gray-300 text-4xl bg-gray-200">
-                      🖼️
-                    </div>
-                  )}
-                  {/* Multiple images icon overlay */}
-                  {post.images && post.images.length > 1 && (
-                    <span className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4 inline"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 10l4.553 2.276A2 2 0 0121 14.118V17a2 2 0 01-2 2H7a2 2 0 01-2-2v-2.882a2 2 0 01.447-1.342L10 10m5 0V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v4m5 0H9"
-                        />
-                      </svg>
-                    </span>
-                  )}
-                </div>
+                  post={{
+                    ...post,
+                    author: {
+                      ...post.author,
+                      verified: post.author.verified ?? false,
+                    },
+                    shares: post.shares ?? [],
+                  }}
+                  currentUserId={currentUser?._id || ""}
+                  onLike={handleLike}
+                  onBookmark={() => {}}
+                />
               ))}
             </div>
           )}

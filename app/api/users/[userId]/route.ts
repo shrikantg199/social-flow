@@ -3,6 +3,7 @@ import connectDB from '@/app/lib/db';
 import User from '@/app/models/User';
 import Post from '@/app/models/Post';
 import mongoose from 'mongoose';
+import { auth } from '@clerk/nextjs';
 
 export async function GET(
   req: Request,
@@ -58,6 +59,16 @@ export async function PATCH(
   try {
     const { userId } = params;
     await connectDB();
+
+    // Only allow the logged-in user to update their own profile
+    const { userId: clerkId } = auth();
+    const currentUser = await User.findOne({ clerkId });
+    if (!clerkId || !currentUser || currentUser._id.toString() !== userId) {
+      return NextResponse.json(
+        { error: 'Forbidden: You can only update your own profile' },
+        { status: 403 }
+      );
+    }
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return NextResponse.json(
