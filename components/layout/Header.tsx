@@ -17,6 +17,7 @@ import { useClerk, useAuth } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useNotificationsStore } from "@/lib/store/notifications";
+import Image from "next/image";
 
 interface HeaderProps {
   currentUser: {
@@ -124,24 +125,16 @@ export function Header({
             )}
           </button>
           {/* Logo */}
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-blue-600 font-bold text-xl"
-          >
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 32 32"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <circle cx="16" cy="16" r="16" fill="#2563EB" />
-              <path
-                d="M10 16c0-3.314 2.686-6 6-6s6 2.686 6 6-2.686 6-6 6-6-2.686-6-6z"
-                fill="#fff"
-              />
-            </svg>
-            <span className="hidden sm:inline">SocialFlow</span>
+          <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+            <Image
+              src="/assets/logo.png"
+              alt="SocialFlow Logo"
+              width={80}
+              height={80}
+            />
+            <span className="hidden sm:inline bg-gradient-to-r from-purple-800 via-blue-700 to-orange-500 bg-clip-text text-transparent">
+              SocialFlow
+            </span>
           </Link>
         </div>
 

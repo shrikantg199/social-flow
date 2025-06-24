@@ -5,6 +5,7 @@ import { ArrowRight, Users, Star, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
+import Image from "next/image";
 
 export default function Home() {
   const { userId } = useAuth();
@@ -38,17 +39,21 @@ export default function Home() {
           }}
           className="mb-6 text-6xl drop-shadow-lg flex items-center justify-center"
         >
-          <motion.span
-            role="img"
-            aria-label="logo"
-            className="mr-2 animate-spin-slow"
-            initial={{ rotate: 0 }}
+          <motion.div
+            className="mr-2"
             animate={{ rotate: 360 }}
             transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
           >
-            🌐
-          </motion.span>
-          <span className="text-2xl font-bold text-blue-600">SocialFlow</span>
+            <Image
+              src="/assets/logo.png"
+              alt="SocialFlow Logo"
+              width={100}
+              height={100}
+            />
+          </motion.div>
+          <span className="text-2xl font-bold bg-gradient-to-r from-purple-800 via-blue-700 to-orange-500 bg-clip-text text-transparent">
+            SocialFlow
+          </span>
         </motion.div>
         <h1 className="text-4xl font-extrabold mb-2 text-gray-900 drop-shadow-sm text-center">
           Welcome to Social Media App
