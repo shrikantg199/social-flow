@@ -25,6 +25,11 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useNotificationsStore } from "@/lib/store/notifications";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface PostProps {
   post: {
@@ -219,222 +224,292 @@ export function Post({ post, currentUserId, onLike, onBookmark }: PostProps) {
   };
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        {/* Post Header */}
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10">
-              <AvatarImage
-                src={post.author.profilePicture}
-                alt={post.author.name}
-              />
-              <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <div className="flex items-center gap-1">
-                <span className="font-semibold">{post.author.name}</span>
-                {post.author.verified && (
-                  <BadgeCheck className="w-4 h-4 text-blue-500" />
-                )}
-              </div>
-              <span className="text-sm text-slate-500">
-                @{post.author.username}
-              </span>
-            </div>
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200"
-              >
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl"
-            >
-              <DropdownMenuItem className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">
-                Not interested
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">
-                Unfollow @{post.author.username}
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">
-                Mute @{post.author.username}
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">
-                Block @{post.author.username}
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">
-                Report post
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* Content */}
-        <div className="mb-3">
-          <p className="text-slate-900 dark:text-slate-100 leading-relaxed whitespace-pre-wrap">
-            {post.content}
-          </p>
-        </div>
-
-        {/* Image */}
-        {post.images && post.images.length > 0 && (
-          <div className="relative aspect-video mb-3">
-            <Image
-              src={post.images[0]}
-              alt="Post image"
-              fill
-              className="object-cover"
-              onLoad={() => setImageLoaded(true)}
-            />
-            {!imageLoaded && (
-              <div className="absolute inset-0 bg-slate-200 dark:bg-slate-800 animate-pulse" />
-            )}
-          </div>
-        )}
-
-        {/* Post Actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-200/50 dark:border-slate-700/50">
-          <div className="flex items-center gap-6">
-            {/* Like */}
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleLike}
-              disabled={isLiking}
-              className={cn(
-                "flex items-center gap-2 group/like transition-colors duration-200",
-                isLiked ? "text-red-700" : "text-slate-500 hover:text-red-500"
-              )}
-            >
-              <Heart
-                className={cn(
-                  "w-4 h-4 transition-colors duration-200",
-                  isLiked
-                    ? "fill-current text-red-700"
-                    : "group-hover/like:fill-current"
-                )}
-              />
-              <span className="text-sm">{likeCount}</span>
-            </motion.button>
-
-            {/* Comment */}
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() =>
-                document.getElementById(`comment-${post._id}`)?.focus()
-              }
-              className="flex items-center gap-2 text-slate-500 hover:text-blue-500 group/comment transition-colors duration-200"
-            >
-              <MessageCircle className="w-4 h-4 group-hover/comment:fill-current transition-colors duration-200" />
-              <span className="text-sm">{comments.length}</span>
-            </motion.button>
-
-            {/* Share */}
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleShare}
-              disabled={isSharing}
-              className={cn(
-                "flex items-center gap-2 group/share transition-colors duration-200",
-                isShared
-                  ? "text-green-500"
-                  : "text-slate-500 hover:text-green-500"
-              )}
-            >
-              <Repeat2 className="w-4 h-4 group-hover/share:text-green-500 transition-colors duration-200" />
-              <span className="text-sm">{shareCount}</span>
-            </motion.button>
-          </div>
-
-          {/* Bookmark */}
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleBookmark}
-            className={cn(
-              "text-slate-500 hover:text-yellow-500 transition-colors duration-200",
-              isBookmarked && "text-yellow-500"
-            )}
-          >
-            <Bookmark
-              className={cn(
-                "w-4 h-4 transition-colors duration-200",
-                isBookmarked && "fill-current"
-              )}
-            />
-          </motion.button>
-        </div>
-
-        {/* Comments Section */}
-        <div className="p-4 border-t border-slate-200/50 dark:border-slate-700/50">
-          {/* Comment Input */}
-          <form onSubmit={handleComment} className="flex gap-2">
-            <input
-              type="text"
-              id={`comment-${post._id}`}
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              placeholder="Write a comment..."
-              className="flex-1 bg-transparent border-none focus:outline-none text-sm"
-              disabled={isCommenting}
-            />
-            <Button
-              type="submit"
-              variant="ghost"
-              size="sm"
-              disabled={!commentText.trim() || isCommenting}
-              className="text-blue-500 hover:text-blue-600"
-            >
-              Post
-            </Button>
-          </form>
-
-          {/* Comments List */}
-          {comments.length > 0 && (
-            <div className="mt-4 space-y-4">
-              {comments.map((comment, idx) => (
-                <div
-                  key={`${comment._id || "noid"}-${idx}`}
-                  className="flex gap-3"
-                >
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage
-                      src={comment.user.profilePicture}
-                      alt={comment.user.name}
-                    />
-                    <AvatarFallback>
-                      {comment.user.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">
-                        {comment.user.name}
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        {formatDate(comment.createdAt)}
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-900 dark:text-slate-100">
-                      {comment.text}
-                    </p>
-                  </div>
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      whileHover={{
+        scale: 1.015,
+        boxShadow: "0 8px 32px 0 rgba(80,80,180,0.10)",
+      }}
+      className="transition-all duration-200"
+    >
+      <Card className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <CardContent className="p-0">
+          {/* Post Header */}
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <Avatar className="w-10 h-10 border-2 border-blue-200 dark:border-blue-800">
+                <AvatarImage
+                  src={post.author.profilePicture}
+                  alt={post.author.name}
+                />
+                <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-base text-slate-900 dark:text-slate-100">
+                    {post.author.name}
+                  </span>
+                  {post.author.verified && (
+                    <span className="ml-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded px-1.5 py-0.5 text-xs flex items-center gap-0.5">
+                      <BadgeCheck className="w-3.5 h-3.5" /> Verified
+                    </span>
+                  )}
                 </div>
-              ))}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-500">
+                    @{post.author.username}
+                  </span>
+                  <span className="text-xs text-slate-400">
+                    • {formatDate(post.createdAt)}
+                  </span>
+                </div>
+              </div>
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-8 h-8 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200"
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl"
+              >
+                <DropdownMenuItem className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">
+                  Not interested
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">
+                  Unfollow @{post.author.username}
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">
+                  Mute @{post.author.username}
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">
+                  Block @{post.author.username}
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">
+                  Report post
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Content */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.4 }}
+            className="mb-3 px-4"
+          >
+            <p className="text-slate-900 dark:text-slate-100 leading-relaxed whitespace-pre-wrap text-base">
+              {post.content}
+            </p>
+          </motion.div>
+
+          {/* Image */}
+          {post.images && post.images.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              whileHover={{ scale: 1.025 }}
+              className="relative aspect-video mb-3 mx-4 overflow-hidden rounded-xl shadow-sm group"
+            >
+              <Image
+                src={post.images[0]}
+                alt="Post image"
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                onLoad={() => setImageLoaded(true)}
+              />
+              {!imageLoaded && (
+                <div className="absolute inset-0 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl" />
+              )}
+            </motion.div>
           )}
-        </div>
-      </CardContent>
-    </Card>
+
+          {/* Post Actions */}
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200/50 dark:border-slate-700/50 px-4 pb-2">
+            <div className="flex items-center gap-6">
+              {/* Like */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.button
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={handleLike}
+                    disabled={isLiking}
+                    className={cn(
+                      "flex items-center gap-2 group/like transition-colors duration-200 px-2 py-1 rounded-md",
+                      isLiked
+                        ? "text-red-700 bg-red-50 dark:bg-red-900/20"
+                        : "text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    )}
+                  >
+                    <motion.span
+                      animate={isLiked ? { scale: [1, 1.3, 1] } : {}}
+                      transition={{ duration: 0.4 }}
+                    >
+                      <Heart
+                        className={cn(
+                          "w-4 h-4 transition-colors duration-200",
+                          isLiked
+                            ? "fill-current text-red-700"
+                            : "group-hover/like:fill-current"
+                        )}
+                      />
+                    </motion.span>
+                    <span className="text-sm font-medium">{likeCount}</span>
+                  </motion.button>
+                </TooltipTrigger>
+              </Tooltip>
+
+              {/* Comment */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.button
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() =>
+                      document.getElementById(`comment-${post._id}`)?.focus()
+                    }
+                    className="flex items-center gap-2 text-slate-500 hover:text-blue-500 group/comment transition-colors duration-200 px-2 py-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  >
+                    <MessageCircle className="w-4 h-4 group-hover/comment:fill-current transition-colors duration-200" />
+                    <span className="text-sm font-medium">
+                      {comments.length}
+                    </span>
+                  </motion.button>
+                </TooltipTrigger>
+              </Tooltip>
+
+              {/* Share */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.button
+                    whileHover={{ scale: 1.15, rotate: 12 }}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={handleShare}
+                    disabled={isSharing}
+                    className={cn(
+                      "flex items-center gap-2 group/share transition-colors duration-200 px-2 py-1 rounded-md",
+                      isShared
+                        ? "text-green-600 bg-green-50 dark:bg-green-900/20"
+                        : "text-slate-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                    )}
+                  >
+                    <Repeat2 className="w-4 h-4 group-hover/share:text-green-600 transition-colors duration-200" />
+                    <span className="text-sm font-medium">{shareCount}</span>
+                  </motion.button>
+                </TooltipTrigger>
+              </Tooltip>
+            </div>
+
+            {/* Bookmark */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <motion.button
+                  whileHover={{ scale: 1.15 }}
+                  whileTap={{ scale: 0.92 }}
+                  onClick={handleBookmark}
+                  className={cn(
+                    "text-slate-500 hover:text-yellow-500 transition-colors duration-200 px-2 py-1 rounded-md hover:bg-yellow-50 dark:hover:bg-yellow-900/20",
+                    isBookmarked &&
+                      "text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20"
+                  )}
+                >
+                  <Bookmark
+                    className={cn(
+                      "w-4 h-4 transition-colors duration-200",
+                      isBookmarked && "fill-current"
+                    )}
+                  />
+                </motion.button>
+              </TooltipTrigger>
+            </Tooltip>
+          </div>
+
+          {/* Comments Section */}
+          <div className="p-4 border-t border-slate-200/50 dark:border-slate-700/50">
+            {/* Comment Input */}
+            <form onSubmit={handleComment} className="flex gap-2">
+              <input
+                type="text"
+                id={`comment-${post._id}`}
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Write a comment..."
+                className="flex-1 bg-transparent border-none focus:outline-none text-sm"
+                disabled={isCommenting}
+              />
+              <Button
+                type="submit"
+                variant="ghost"
+                size="sm"
+                disabled={!commentText.trim() || isCommenting}
+                className="text-blue-500 hover:text-blue-600"
+              >
+                Post
+              </Button>
+            </form>
+
+            {/* Comments List */}
+            {comments.length > 0 && (
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: {},
+                  visible: {
+                    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+                  },
+                }}
+                className="mt-4 space-y-4"
+              >
+                {comments.map((comment, idx) => (
+                  <motion.div
+                    key={`${comment._id || "noid"}-${idx}`}
+                    variants={{
+                      hidden: { opacity: 0, y: 10 },
+                      visible: { opacity: 1, y: 0 },
+                    }}
+                    className="flex gap-3 border-b border-slate-100 dark:border-slate-800 pb-3 last:border-none"
+                  >
+                    <Avatar className="w-8 h-8 border border-blue-200 dark:border-blue-800">
+                      <AvatarImage
+                        src={comment.user.profilePicture}
+                        alt={comment.user.name}
+                      />
+                      <AvatarFallback>
+                        {comment.user.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm">
+                          {comment.user.name}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {formatDate(comment.createdAt)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-900 dark:text-slate-100">
+                        {comment.text}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { redirect } from "next/navigation";
+import { redirect, usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { RightSidebar } from "@/components/layout/RightSidebar";
@@ -27,6 +27,9 @@ export default function DashboardLayout({
     loading: boolean;
     error: any;
   };
+  const pathname = usePathname();
+  const isMessagesPage = pathname ? pathname.includes("/messages") : false;
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   if (loading || !currentUser) {
     return (
@@ -59,6 +62,8 @@ export default function DashboardLayout({
               avatar: currentUser.profilePicture,
               verified: currentUser.verified ?? false,
             }}
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
           />
         </div>
         <div className="flex-1 lg:pl-80">
@@ -70,12 +75,18 @@ export default function DashboardLayout({
               profilePicture: currentUser.profilePicture,
               verified: currentUser.verified ?? false,
             }}
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
           />
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="max-w-2xl mx-auto px-2 sm:px-6 py-6 sm:py-8 lg:px-0"
+            className={
+              isMessagesPage
+                ? "w-full"
+                : "max-w-2xl mx-auto px-2 sm:px-6 py-6 sm:py-8 lg:px-0"
+            }
           >
             {children}
           </motion.div>

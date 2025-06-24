@@ -22,6 +22,7 @@ export function DashboardLayout({
   const { user, isLoaded } = useUser();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoaded || !user) return;
@@ -113,10 +114,18 @@ export function DashboardLayout({
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <div className="flex">
-        <Sidebar currentUser={currentUser} />
+        <Sidebar
+          currentUser={currentUser}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         <div className="flex-1 lg:ml-64">
-          <Header currentUser={currentUser} />
+          <Header
+            currentUser={currentUser}
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+          />
 
           <div className="px-6 py-8 max-w-7xl mx-auto">
             <motion.div

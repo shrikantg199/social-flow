@@ -70,6 +70,7 @@ export async function GET(req: NextRequest) {
 
     // Get search query
     const search = searchParams.get('search') || '';
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
 
     // Build query
     const query: any = { _id: { $ne: currentUser?._id } };
@@ -80,7 +81,7 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    const users = await User.find(query, 'name username profilePicture').limit(10);
+    const users = await User.find(query, 'name username profilePicture').limit(limit);
 
     return NextResponse.json(users, { status: 200 });
   } catch (error) {

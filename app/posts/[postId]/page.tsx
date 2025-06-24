@@ -29,7 +29,8 @@ interface Post {
 }
 
 export default function PostPage() {
-  const { postId } = useParams();
+  const params = useParams();
+  const postId = params?.postId as string | undefined;
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

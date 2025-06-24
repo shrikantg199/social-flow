@@ -55,6 +55,7 @@ export default function ProfilePage({
   const [editUsername, setEditUsername] = useState("");
   const [editBio, setEditBio] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetchUserProfile();
@@ -257,6 +258,8 @@ export default function ProfilePage({
             profilePicture: user.profilePicture,
             verified: false,
           }}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
       )}
       <main className="max-w-4xl mx-auto p-4 bg-white min-h-screen pt-20">

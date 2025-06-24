@@ -33,15 +33,20 @@ interface SidebarProps {
     avatar: string;
     verified: boolean;
   };
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function Sidebar({ currentUser }: SidebarProps) {
+export function Sidebar({
+  currentUser,
+  isMobileMenuOpen,
+  setIsMobileMenuOpen,
+}: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { signOut } = useClerk();
   const { isSignedIn } = useAuth();
   const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   if (!currentUser) {
@@ -130,6 +135,7 @@ export function Sidebar({ currentUser }: SidebarProps) {
     if (path === "/") {
       return pathname === "/";
     }
+    if (!pathname) return false;
     return pathname.startsWith(path);
   };
 
@@ -154,27 +160,12 @@ export function Sidebar({ currentUser }: SidebarProps) {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed left-0 top-0 h-full w-64 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-700/50 z-40 transition-transform duration-300 ease-in-out",
+          "fixed left-0 top-20 h-[calc(100vh-5rem)] md:top-0 md:h-full w-64 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-700/50 z-40 transition-transform duration-300 ease-in-out",
           isMobile && !isMobileMenuOpen && "-translate-x-full",
           "md:translate-x-0"
         )}
       >
-        <div className="flex flex-col h-full p-4">
-          {/* Logo */}
-          <Link
-            href="/"
-            className="flex items-center gap-2 mb-8 px-2 cursor-pointer"
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <Hash className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                SocialFlow
-              </span>
-            </div>
-          </Link>
-
+        <div className="flex flex-col h-full p-4 pt-20">
           {/* Navigation */}
           <nav className="flex-1 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
             {menuItems.map((item) => (
@@ -252,7 +243,7 @@ export function Sidebar({ currentUser }: SidebarProps) {
       {/* Overlay for mobile */}
       {isMobile && isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 md:hidden"
+          className="fixed top-20 left-0 right-0 bottom-0 bg-black/20 backdrop-blur-sm z-30 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}

@@ -197,7 +197,7 @@ export function Feed({ currentUser }: FeedProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <Stories />
+        <Stories currentUser={currentUser} />
       </motion.div>
 
       {/* Create Post */}
