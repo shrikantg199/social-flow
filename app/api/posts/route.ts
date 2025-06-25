@@ -62,24 +62,46 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const { userId } = auth();
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1');
+    const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = 20;
     const skip = (page - 1) * limit;
 
-    const posts = await Post.find()
-      .populate('author', 'name profilePicture')
-      .populate('likes', 'name')
-      .populate('comments.user', 'name profilePicture')
-      .sort({ createdAt: -1, _id: -1 })
-      .skip(skip)
-      .limit(limit);
+    const user = await User.findOne({ clerkId: userId });
 
-    return NextResponse.json(Array.isArray(posts) ? posts : []);
+    let posts;
+
+    // If the user is not following anyone, show them posts from other users
+    if (user && user.following.length === 0) {
+      posts = await Post.find({ author: { $ne: user._id } }) // Exclude their own posts
+        .populate("author", "name username profilePicture verified")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+    } else {
+      // If the user is following people, show posts from those users
+      const followingIds = user ? user.following : [];
+      posts = await Post.find({ author: { $in: followingIds } })
+        .populate("author", "name username profilePicture verified")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+    }
+
+    return NextResponse.json(posts);
   } catch (error) {
-    console.error('Error fetching posts:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Error fetching posts:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

@@ -1,4 +1,5 @@
-import { authMiddleware } from "@clerk/nextjs";
+import { authMiddleware, redirectToSignIn } from "@clerk/nextjs";
+import { NextResponse } from "next/server";
 
 export default authMiddleware({
   publicRoutes: [
@@ -8,12 +9,14 @@ export default authMiddleware({
     "/api/webhook"
   ],
   ignoredRoutes: ["/api/webhook"],
-  afterAuth(auth, req, evt) {
-    // Handle users who aren't authenticated
+  afterAuth(auth, req) {
+    if (auth.userId && auth.isPublicRoute) {
+      const feedUrl = new URL("/feed", req.url);
+      return NextResponse.redirect(feedUrl);
+    }
+
     if (!auth.userId && !auth.isPublicRoute) {
-      const signInUrl = new URL('/sign-in', req.url);
-      signInUrl.searchParams.set('redirect_url', req.url);
-      return Response.redirect(signInUrl);
+      return redirectToSignIn({ returnBackUrl: req.url });
     }
   }
 });
