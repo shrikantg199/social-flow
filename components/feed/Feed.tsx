@@ -37,6 +37,11 @@ export function Feed({ currentUser }: FeedProps) {
     }
     try {
       const res = await fetch(`/api/posts?page=${pageNum}`);
+      if (res.status === 401) {
+        // Redirect to sign-in if not authenticated
+        window.location.href = "/sign-in";
+        return;
+      }
       if (!res.ok) {
         throw new Error("Failed to fetch posts");
       }
@@ -125,6 +130,9 @@ export function Feed({ currentUser }: FeedProps) {
     shares: post.shares || [],
     createdAt: post.createdAt,
   }));
+
+  // Debug: log posts array
+  console.log("Fetched posts:", posts);
 
   // Map currentUser to the shape expected by CreatePost
   const mappedUser = {
@@ -262,6 +270,10 @@ export function Feed({ currentUser }: FeedProps) {
           >
             <p className="text-lg font-medium">No posts yet</p>
             <p className="text-sm mt-2">Be the first to share something!</p>
+            {/* Debug: show if posts array is empty */}
+            <pre className="mt-4 text-xs text-red-400">
+              Debug: posts array is empty
+            </pre>
           </motion.div>
         ) : (
           <motion.div

@@ -75,13 +75,32 @@ export async function GET(req: NextRequest) {
     const limit = 20;
     const skip = (page - 1) * limit;
 
-    const user = await User.findOne({ clerkId: userId });
+    let user = await User.findOne({ clerkId: userId });
+
+    if (!user) {
+      // Get user info from Clerk
+      const clerkUser = await fetch(`https://api.clerk.dev/v1/users/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }).then(res => res.json());
+
+      // Create new user in database
+      user = await User.create({
+        clerkId: userId,
+        name: clerkUser.first_name + ' ' + clerkUser.last_name,
+        email: clerkUser.email_addresses[0]?.email_address || '',
+        profilePicture: clerkUser.image_url || '',
+        following: [], // Make sure to initialize following as an empty array
+      });
+    }
 
     let posts;
 
-    // If the user is not following anyone, show them posts from other users
+    // If the user is not following anyone, show them all posts (including their own)
     if (user && user.following.length === 0) {
-      posts = await Post.find({ author: { $ne: user._id } }) // Exclude their own posts
+      posts = await Post.find() // Show ALL posts
         .populate("author", "name username profilePicture verified")
         .sort({ createdAt: -1 })
         .skip(skip)

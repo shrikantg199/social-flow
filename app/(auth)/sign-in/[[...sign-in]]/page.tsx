@@ -5,6 +5,7 @@ export default function Page() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <div className="w-full max-w-md">
         <SignIn
+          afterSignInUrl="/feed"
           appearance={{
             elements: {
               formButtonPrimary:

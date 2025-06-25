@@ -13,15 +13,38 @@ export async function POST(req: Request) {
       );
     }
 
-    const { name, email, profilePicture } = await req.json();
+    const { name, email, username, profilePicture } = await req.json();
+
+    if (!name || !email || !username) {
+      return NextResponse.json(
+        { error: 'Name, email, and username are required.' },
+        { status: 400 }
+      );
+    }
 
     await connectDB();
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ clerkId: userId });
-    if (existingUser) {
+    // Check if user already exists by clerkId
+    const existingUserByClerk = await User.findOne({ clerkId: userId });
+    if (existingUserByClerk) {
       return NextResponse.json(
         { error: 'User already exists' },
+        { status: 400 }
+      );
+    }
+
+    // Check if username or email already exists
+    const existingUserByUsername = await User.findOne({ username });
+    if (existingUserByUsername) {
+      return NextResponse.json(
+        { error: 'Username already taken' },
+        { status: 400 }
+      );
+    }
+    const existingUserByEmail = await User.findOne({ email });
+    if (existingUserByEmail) {
+      return NextResponse.json(
+        { error: 'Email already registered' },
         { status: 400 }
       );
     }
@@ -31,6 +54,7 @@ export async function POST(req: Request) {
       clerkId: userId,
       name,
       email,
+      username,
       profilePicture: profilePicture || '',
     });
 

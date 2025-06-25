@@ -487,7 +487,7 @@ export function Post({ post, currentUserId, onLike, onBookmark }: PostProps) {
                         alt={comment.user.name}
                       />
                       <AvatarFallback>
-                        {comment.user.name.charAt(0)}
+                        {comment.user?.name?.charAt(0) || "?"}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">

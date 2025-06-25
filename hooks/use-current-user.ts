@@ -31,7 +31,28 @@ export function useCurrentUser() {
       } else if (data.user) {
         setCurrentUser(data.user);
       } else {
-        setCurrentUser(null);
+        // User not found, try to create
+        const createRes = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: user.emailAddresses?.[0]?.emailAddress || '',
+            username: user.username || user.emailAddresses?.[0]?.emailAddress?.split('@')[0] || '',
+            name: user.fullName || user.firstName || user.lastName || '',
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            avatar: user.imageUrl || '',
+          }),
+        });
+        if (!createRes.ok) {
+          throw new Error('Failed to create user');
+        }
+        const createData = await createRes.json();
+        if (createData.user) {
+          setCurrentUser(createData.user);
+        } else {
+          setCurrentUser(null);
+        }
       }
     } catch (err) {
       if (err instanceof Error) {
